@@ -13,7 +13,7 @@ GameState stateGame = START_GAME;
 
 const int LED_PINS[] = {6, 7, 8, 9};
 const int NUM_LEDS = sizeof(LED_PINS) / sizeof(LED_PINS[0]);
-const int botaoAmarelo = 1; 
+const int botaoAmarelo = 11; 
 const int botaoAzul = 2;    
 const int botaoVerde = 3;  
 const int botaoVermelho = 4; 
@@ -92,14 +92,13 @@ void geraSequencia (int tempo, int sequencia){
 
 void leBotao(){
   long startTime = millis();
-  Serial.println(millis());
   while (millis() - startTime < SERIAL_TIMEOUT){
 
     if (digitalRead(botaoVerde) == LOW) {
       delay(100); 
       if (digitalRead(botaoVerde) == LOW) {
         recebido += "3";
-        acendeLed(8);
+        acendeLed(2);
         //delay(100); 
         SERIAL_TIMEOUT += 5000;
         if(verificaRecebido(recebido)){
@@ -112,7 +111,7 @@ void leBotao(){
       delay(100); 
       if (digitalRead(botaoAmarelo) == LOW) {
         recebido += "1";  
-        acendeLed(6);
+        acendeLed(0);
         //delay(100); 
 
         SERIAL_TIMEOUT += 5000;
@@ -127,7 +126,7 @@ void leBotao(){
       delay(100); 
       if (digitalRead(botaoAzul) == LOW) {
         recebido += "2";
-        acendeLed(7);  
+        acendeLed(1);  
         //delay(100); 
         SERIAL_TIMEOUT += 5000;
         if(verificaRecebido(recebido)){
@@ -139,7 +138,7 @@ void leBotao(){
       delay(100); 
       if (digitalRead(botaoVermelho) == LOW) {
         recebido += "4";
-        acendeLed(9);
+        acendeLed(3);
         SERIAL_TIMEOUT += 5000;
         if(verificaRecebido(recebido)){
           stateGame = START_GAME;
@@ -150,7 +149,7 @@ void leBotao(){
     if (millis() - startTime >= SERIAL_TIMEOUT) {
       break;
     }
-    Serial.println("Recebido: "+recebido);
+    //Serial.println("Recebido: "+recebido);
   }
 }
 
@@ -163,8 +162,10 @@ boolean verificaRecebido(String recebido){
 }
 
 void acendeLed(int led){
+  Serial.println(led);
   digitalWrite(LED_PINS[led], HIGH);
-  delay(50);
+  Serial.println("AQUI");
+  delay(100);
   digitalWrite(LED_PINS[led], LOW);
 
 } 
