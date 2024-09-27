@@ -1,6 +1,6 @@
 String recebido;
 String sequenciaNumerica = "";
-const long SERIAL_TIMEOUT = 10000;
+long SERIAL_TIMEOUT = 6000;
 
 enum GameState {
   START_GAME,
@@ -58,8 +58,11 @@ void loop() {
       }
       break;
     case PLAY_GAME:
+      recebido = "";
+      sequenciaNumerica = "";
       geraSequencia(400, 2);
       leBotao();
+      SERIAL_TIMEOUT = 6000;
       break;
 
   }
@@ -84,45 +87,84 @@ void geraSequencia (int tempo, int sequencia){
     delay(tempo);
     sequenciaNumerica += String(ordemLeds[j]);
   }
-  Serial.println(sequenciaNumerica);
-  delay(5000);
+  
 }
 
 void leBotao(){
-  
   long startTime = millis();
+  Serial.println(millis());
   while (millis() - startTime < SERIAL_TIMEOUT){
+
     if (digitalRead(botaoVerde) == LOW) {
-      delay(50); 
+      delay(100); 
       if (digitalRead(botaoVerde) == LOW) {
-        recebido += "1";  
-         
+        recebido += "3";
+        acendeLed(8);
+        //delay(100); 
+        SERIAL_TIMEOUT += 5000;
+        if(verificaRecebido(recebido)){
+          stateGame = START_GAME;
+          break;
+        }
       }
     }
     else if (digitalRead(botaoAmarelo) == LOW) {
-      delay(50); 
+      delay(100); 
       if (digitalRead(botaoAmarelo) == LOW) {
-        recebido += "2";  
-        
+        recebido += "1";  
+        acendeLed(6);
+        //delay(100); 
+
+        SERIAL_TIMEOUT += 5000;
+        if(verificaRecebido(recebido)){
+          stateGame = START_GAME;
+          break;
+        }
       }
     }
-    else if (digitalRead(botaoAzul) == LOW) {
-      delay(50); 
+
+    if (digitalRead(botaoAzul) == LOW) {
+      delay(100); 
       if (digitalRead(botaoAzul) == LOW) {
-        recebido += "3";  
-        
+        recebido += "2";
+        acendeLed(7);  
+        //delay(100); 
+        SERIAL_TIMEOUT += 5000;
+        if(verificaRecebido(recebido)){
+          stateGame = START_GAME;
+          break;
+        }
       }
-    }
-    else if (digitalRead(botaoVermelho) == LOW) {
-      delay(50); // debounce
+    }else if (digitalRead(botaoVermelho) == LOW) {
+      delay(100); 
       if (digitalRead(botaoVermelho) == LOW) {
-        recebido += "4";  
+        recebido += "4";
+        acendeLed(9);
+        SERIAL_TIMEOUT += 5000;
+        if(verificaRecebido(recebido)){
+          stateGame = START_GAME;
+          break;
+        }
       }
     }
     if (millis() - startTime >= SERIAL_TIMEOUT) {
       break;
     }
+    Serial.println("Recebido: "+recebido);
   }
-
-  Serial.println(recebido);
 }
+
+boolean verificaRecebido(String recebido){
+  if(recebido.equals(sequenciaNumerica)){
+    return true;
+  }else{
+    return false;
+  }
+}
+
+void acendeLed(int led){
+  digitalWrite(LED_PINS[led], HIGH);
+  delay(50);
+  digitalWrite(LED_PINS[led], LOW);
+
+} 
