@@ -86,6 +86,7 @@ void geraSequencia (int tempo, int sequencia){
     digitalWrite(LED_PINS[ledIndex], LOW);
     delay(tempo);
     sequenciaNumerica += String(ordemLeds[j]);
+
   }
   
 }
@@ -130,7 +131,6 @@ void leBotao(){
         //delay(100); 
         SERIAL_TIMEOUT += 5000;
         if(verificaRecebido(recebido)){
-          stateGame = START_GAME;
           break;
         }
       }
@@ -149,14 +149,21 @@ void leBotao(){
     if (millis() - startTime >= SERIAL_TIMEOUT) {
       break;
     }
-    //Serial.println("Recebido: "+recebido);
+    
   }
 }
 
 boolean verificaRecebido(String recebido){
   if(recebido.equals(sequenciaNumerica)){
+    stateGame = START_GAME;
     return true;
   }else{
+    for(int i = 0; i < recebido.length(); i++){
+      if(recebido.charAt(i) != sequenciaNumerica.charAt(i)){
+        stateGame = START_GAME;
+        return true;
+      }
+    }
     return false;
   }
 }
@@ -169,3 +176,4 @@ void acendeLed(int led){
   digitalWrite(LED_PINS[led], LOW);
 
 } 
+
