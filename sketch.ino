@@ -16,7 +16,7 @@ const int botaoAmarelo = 11;
 const int botaoAzul = 2;    
 const int botaoVerde = 3;  
 const int botaoVermelho = 4; 
-const int buzzerPin = 13; 
+const int buzzerPin = 13;
 
 void setup() {
   for (int i = 0; i < NUM_LEDS; i++) {
@@ -28,7 +28,7 @@ void setup() {
   pinMode(botaoAmarelo, INPUT_PULLUP);
   pinMode(botaoAzul, INPUT_PULLUP);
   pinMode(botaoVermelho, INPUT_PULLUP);
-  pinMode(buzzerPin, OUTPUT); 
+  pinMode(buzzerPin, OUTPUT);
   
   Serial.begin(9600);
 }
@@ -54,6 +54,7 @@ void loop() {
             digitalRead(botaoAzul) == LOW || digitalRead(botaoAmarelo) == LOW) {
           piscaled(4);
           stateGame = PLAY_GAME;
+          sequenciaNumerica = ""; 
           delay(1000);
         }
       }
@@ -61,16 +62,15 @@ void loop() {
 
     case PLAY_GAME:
       recebido = "";
-      sequenciaNumerica = "";
-      for(int i = 2; i< 1000; i++){
-        geraSequencia(400, i);
-        i++;
-        leBotao();
+      mostraSequencia(); 
+      leBotao();         
+      if (stateGame == PLAY_GAME) {
+        adicionaNovoElemento();  
       }
       SERIAL_TIMEOUT = 6000;
       break;
+
     case GAME_OVER:
-      
       for (int i = 0; i < 4; i++) {
         for (int j = 0; j < NUM_LEDS; j++) {
           digitalWrite(LED_PINS[j], HIGH);
@@ -80,115 +80,107 @@ void loop() {
         for (int j = 0; j < NUM_LEDS; j++) {
           digitalWrite(LED_PINS[j], LOW);
         }
-      delay(300);
-    }
+        delay(300);
+      }
 
-    Serial.println("GAME OVER!");
-    delay(2000); 
-    stateGame = START_GAME;
-    break;
-
-
+      Serial.println("GAME OVER!");
+      delay(2000); 
+      stateGame = START_GAME;
+      break;
   }
 }
 
-void geraSequencia(int tempo, int sequencia) {
-  int ordemLeds[sequencia];
-
-  for (int i = 0; i < sequencia; i++) {
-    ordemLeds[i] = random(1, NUM_LEDS + 1);
-  }
-
-  sequenciaNumerica = "";
-
-  for (int j = 0; j < sequencia; j++) {
-    int ledIndex = ordemLeds[j] - 1;
-    
+void mostraSequencia() {
+  for (int i = 0; i < sequenciaNumerica.length(); i++) {
+    int ledIndex = sequenciaNumerica.charAt(i) - '1'; 
     digitalWrite(LED_PINS[ledIndex], HIGH);
-    tocarSom(j+1);
-    delay(tempo);
+    tocarSom(ledIndex+1);
+    delay(400);
     digitalWrite(LED_PINS[ledIndex], LOW);
-    delay(tempo);
-    sequenciaNumerica += String(ordemLeds[j]);
+    delay(200);
   }
+}
+
+void adicionaNovoElemento() {
+  int novoElemento = random(1, NUM_LEDS + 1);
+  sequenciaNumerica += String(novoElemento);
 }
 
 void leBotao() {
+  recebido = "";  
   long startTime = millis();
-  while (millis() - startTime < SERIAL_TIMEOUT) {
+  int posicaoAtual = 0;
+
+  while (millis() - startTime < SERIAL_TIMEOUT && posicaoAtual < sequenciaNumerica.length()) {
     if (digitalRead(botaoVerde) == LOW) {
-      delay(150);
+      delay(150);  
       if (digitalRead(botaoVerde) == LOW) {
         acendeLed(2);
-        tocarSom(3); 
+        tocarSom(3);
         recebido += "3";
-        SERIAL_TIMEOUT += 5000;
-        if (verificaRecebido(recebido)) {
-          break;
+        if (!verificaRecebido(posicaoAtual)) {
+          stateGame = GAME_OVER; 
+          return;
         }
+        posicaoAtual++;
       }
     } else if (digitalRead(botaoAmarelo) == LOW) {
-      delay(150);
+      delay(150);  
       if (digitalRead(botaoAmarelo) == LOW) {
-        recebido += "1";
         acendeLed(0);
-        tocarSom(1); 
-        SERIAL_TIMEOUT += 5000;
-        if (verificaRecebido(recebido)) {
-          break;
+        tocarSom(1);
+        recebido += "1";
+        if (!verificaRecebido(posicaoAtual)) {
+          stateGame = GAME_OVER; 
+          return;
         }
+        posicaoAtual++;
       }
-    }
-
-    if (digitalRead(botaoAzul) == LOW) {
-      delay(150);
+    } else if (digitalRead(botaoAzul) == LOW) {
+      delay(150);  
       if (digitalRead(botaoAzul) == LOW) {
-        
         acendeLed(1);
         tocarSom(2);
         recebido += "2";
-        SERIAL_TIMEOUT += 5000;
-        if (verificaRecebido(recebido)) {
-          break;
+        if (!verificaRecebido(posicaoAtual)) {
+          stateGame = GAME_OVER; 
+          return;
         }
+        posicaoAtual++;
       }
     } else if (digitalRead(botaoVermelho) == LOW) {
-      delay(150);
+      delay(150); 
       if (digitalRead(botaoVermelho) == LOW) {
         acendeLed(3);
         tocarSom(4);
-        recebido += "4"; 
-        SERIAL_TIMEOUT += 5000;
-        if (verificaRecebido(recebido)) {
-          stateGame = START_GAME;
-          break;
+        recebido += "4";
+        if (!verificaRecebido(posicaoAtual)) {
+          stateGame = GAME_OVER; 
+          return;
         }
+        posicaoAtual++;
       }
     }
-    if (millis() - startTime >= SERIAL_TIMEOUT) {
-      break;
-    }
+  }
+
+ 
+  if (posicaoAtual == sequenciaNumerica.length()) {
+    Serial.println("Acertou a sequência!");
+    delay(1000);
   }
 }
 
-boolean verificaRecebido(String recebido) {
-  if (recebido.equals(sequenciaNumerica)) {
-    return true;
+boolean verificaRecebido(int posicaoAtual) {
+  
+  if (recebido.charAt(posicaoAtual) == sequenciaNumerica.charAt(posicaoAtual)) {
+    return true;  
   } else {
-    for (int i = 0; i < recebido.length(); i++) {
-      if (recebido.charAt(i) != sequenciaNumerica.charAt(i)) {
-        stateGame = GAME_OVER;
-        return true;
-      }
-    }
     return false;
   }
 }
 
 void acendeLed(int led) {
-  Serial.println(led);
   digitalWrite(LED_PINS[led], HIGH);
-  Serial.println("AQUI");
   delay(100);
   digitalWrite(LED_PINS[led], LOW);
 }
