@@ -1,21 +1,23 @@
 String recebido;
 String sequenciaNumerica = "";
-long SERIAL_TIMEOUT = 6000;
+long SERIAL_TIMEOUT = 10000;
+long tempoEspera; 
 
 enum GameState {
+  SELECIONA_DIFICULDADE,
   START_GAME,
   PLAY_GAME,
   GAME_OVER
 };
 
-GameState stateGame = START_GAME;
+GameState stateGame = SELECIONA_DIFICULDADE;
 
 const int LED_PINS[] = {6, 7, 8, 9};
 const int NUM_LEDS = sizeof(LED_PINS) / sizeof(LED_PINS[0]);
 const int botaoAmarelo = 11; 
 const int botaoAzul = 2;    
-const int botaoVerde = 3;  
-const int botaoVermelho = 4; 
+const int botaoVerde = 4;  
+const int botaoVermelho = 3; 
 const int buzzerPin = 13;
 
 void setup() {
@@ -46,6 +48,10 @@ void piscaled(int vezes) {
 
 void loop() {
   switch (stateGame) {
+    case SELECIONA_DIFICULDADE:
+      selecionaDificuldade(); 
+      break;
+
     case START_GAME:
       if (digitalRead(botaoVerde) == LOW || digitalRead(botaoVermelho) == LOW || 
           digitalRead(botaoAzul) == LOW || digitalRead(botaoAmarelo) == LOW) {
@@ -67,10 +73,11 @@ void loop() {
       if (stateGame == PLAY_GAME) {
         adicionaNovoElemento();  
       }
-      SERIAL_TIMEOUT = 6000;
+      SERIAL_TIMEOUT = 10000; 
       break;
 
     case GAME_OVER:
+      tocarMusicaDerrota(); 
       for (int i = 0; i < 4; i++) {
         for (int j = 0; j < NUM_LEDS; j++) {
           digitalWrite(LED_PINS[j], HIGH);
@@ -85,26 +92,66 @@ void loop() {
 
       Serial.println("GAME OVER!");
       delay(2000); 
-      stateGame = START_GAME;
+      stateGame = SELECIONA_DIFICULDADE; 
       break;
   }
 }
 
+void selecionaDificuldade() {
+  Serial.println("Selecione o nível de dificuldade: ");
+  Serial.println("1 - Fácil (1000 ms)");
+  Serial.println("2 - Médio (700 ms)");
+  Serial.println("3 - Difícil (500 ms)");
+  Serial.println("4 - Muito Difícil (300 ms)");
+
+  while (Serial.available() == 0) {
+    // Espera o jogador inserir a dificuldade
+  }
+
+  char input = Serial.read();
+  switch (input) {
+    case '1':
+      tempoEspera = 1000;
+      Serial.println("Dificuldade selecionada: Fácil");
+      break;
+    case '2':
+      tempoEspera = 700;
+      Serial.println("Dificuldade selecionada: Médio");
+      break;
+    case '3':
+      tempoEspera = 500;
+      Serial.println("Dificuldade selecionada: Difícil");
+      break;
+    case '4':
+      tempoEspera = 300;
+      Serial.println("Dificuldade selecionada: Muito Difícil");
+      break;
+    default:
+      Serial.println("Seleção inválida! Selecione entre 1 e 4.");
+      return; 
+  }
+
+  stateGame = START_GAME; 
+}
+
+// Função para mostrar a sequência de LEDs
 void mostraSequencia() {
   for (int i = 0; i < sequenciaNumerica.length(); i++) {
     int ledIndex = sequenciaNumerica.charAt(i) - '1'; 
     digitalWrite(LED_PINS[ledIndex], HIGH);
-    tocarSom(ledIndex+1);
-    delay(400);
+    tocarSom(ledIndex + 1);
+    delay(tempoEspera); 
     digitalWrite(LED_PINS[ledIndex], LOW);
-    delay(200);
+    delay(tempoEspera / 2);
   }
 }
+
 
 void adicionaNovoElemento() {
   int novoElemento = random(1, NUM_LEDS + 1);
   sequenciaNumerica += String(novoElemento);
 }
+
 
 void leBotao() {
   recebido = "";  
@@ -163,21 +210,22 @@ void leBotao() {
     }
   }
 
- 
+  if (millis() - startTime >= SERIAL_TIMEOUT) {
+    Serial.println("Tempo esgotado!");
+    stateGame = GAME_OVER; 
+  }
+
   if (posicaoAtual == sequenciaNumerica.length()) {
     Serial.println("Acertou a sequência!");
     delay(1000);
   }
 }
 
+
 boolean verificaRecebido(int posicaoAtual) {
-  
-  if (recebido.charAt(posicaoAtual) == sequenciaNumerica.charAt(posicaoAtual)) {
-    return true;  
-  } else {
-    return false;
-  }
+  return recebido.charAt(posicaoAtual) == sequenciaNumerica.charAt(posicaoAtual);
 }
+
 
 void acendeLed(int led) {
   digitalWrite(LED_PINS[led], HIGH);
@@ -185,9 +233,19 @@ void acendeLed(int led) {
   digitalWrite(LED_PINS[led], LOW);
 }
 
+
 void tocarSom(int nota) {
   int frequencias[] = {261, 329, 392, 523, 150}; 
   if (nota >= 1 && nota <= 5) {
     tone(buzzerPin, frequencias[nota - 1], 100); 
+  }
+}
+
+
+void tocarMusicaDerrota() {
+  int derrotaFrequencias[] = {200, 150, 100, 50};  
+  for (int i = 0; i < 4; i++) {
+    tone(buzzerPin, derrotaFrequencias[i], 300);
+    delay(300);
   }
 }
