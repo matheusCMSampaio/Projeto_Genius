@@ -47,6 +47,10 @@ void piscaled(int vezes) {
 }
 
 void loop() {
+  for (int i = 0; i < NUM_LEDS; i++) {
+        pinMode(LED_PINS[i], OUTPUT);
+        digitalWrite(LED_PINS[i], LOW); 
+    }
   switch (stateGame) {
     case SELECIONA_DIFICULDADE:
       selecionaDificuldade(); 
@@ -105,7 +109,6 @@ void selecionaDificuldade() {
   Serial.println("4 - Muito Difícil (300 ms)");
 
   while (Serial.available() == 0) {
-    // Espera o jogador inserir a dificuldade
   }
 
   char input = Serial.read();
@@ -126,15 +129,19 @@ void selecionaDificuldade() {
       tempoEspera = 300;
       Serial.println("Dificuldade selecionada: Muito Difícil");
       break;
+    case '5':
+      tempoEspera = 70;
+      Serial.println("Dificuldade selecionada: Extremo");
+      break;
     default:
-      Serial.println("Seleção inválida! Selecione entre 1 e 4.");
+      Serial.println("Seleção inválida! Selecione entre 1 e 5.");
       return; 
   }
 
   stateGame = START_GAME; 
 }
 
-// Função para mostrar a sequência de LEDs
+
 void mostraSequencia() {
   for (int i = 0; i < sequenciaNumerica.length(); i++) {
     int ledIndex = sequenciaNumerica.charAt(i) - '1'; 
@@ -232,7 +239,6 @@ void acendeLed(int led) {
   delay(100);
   digitalWrite(LED_PINS[led], LOW);
 }
-
 
 void tocarSom(int nota) {
   int frequencias[] = {261, 329, 392, 523, 150}; 
