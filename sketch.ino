@@ -107,6 +107,7 @@ void selecionaDificuldade() {
   Serial.println("2 - Médio (700 ms)");
   Serial.println("3 - Difícil (500 ms)");
   Serial.println("4 - Muito Difícil (300 ms)");
+  Serial.println("5 - Extremo (70 ms)");
 
   while (Serial.available() == 0) {
   }
